@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to the Dashboard</h1>
+        <p>This is your personal dashboard. You can manage your expenses here.</p>
+        
+        <!-- Dashboard content would go here -->
+        
+        <a href="{{ url_for('login') }}" class="logout-btn">Log out</a>
+    </div>
+</body>
+</html>
