@@ -3,17 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <title>Finance Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1>Welcome to the Dashboard</h1>
-        <p>This is your personal dashboard. You can manage your expenses here.</p>
+        <header>
+            <h1>Welcome to your Finance Dashboard, {{ username }}</h1>
+            <nav>
+                <a href="{{ url_for('dashboard') }}" class="active">Dashboard</a>
+                <a href="{{ url_for('categories') }}" class="menu-item">Manage Categories</a>
+                <a href="{{ url_for('salary') }}" class="menu-item">Add Salary</a>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Log out</a>
+            </nav>
+        </header>
         
-        <!-- Dashboard content would go here -->
-        
-        <a href="{{ url_for('login') }}" class="logout-btn">Log out</a>
+        <main>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <section class="salary-section">
+                <h2>Monthly Income</h2>
+                {% if monthly_salary and monthly_salary['total'] %}
+                    <div class="salary-box">
+                        <p>Total: ${{ "%.2f"|format(monthly_salary['total']) }}</p>
+                    </div>
+                {% else %}
+                    <p>No salary information available. <a href="{{ url_for('salary') }}">Add your salary</a> to see your budget breakdown.</p>
+                {% endif %}
+            </section>
+            
+            {% if budget_data %}
+                <section class="budget-visualization">
+                    <h2>Budget Allocation</h2>
+                    <div class="chart-container">
+                        <canvas id="budgetChart"></canvas>
+                    </div>
+                </section>
+                
+                <section class="budget-table">
+                    <h2>Budget Breakdown</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Percentage</th>
+                                <th>Budget Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in budget_data %}
+                                <tr>
+                                    <td>{{ item.name }}</td>
+                                    <td>{{ item.percentage }}%</td>
+                                    <td>${{ "%.2f"|format(item.budget) }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </section>
+                
+                <script>
+                    // Create the budget chart
+                    const ctx = document.getElementById('budgetChart').getContext('2d');
+                    const budgetChart = new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: [{% for item in budget_data %}'{{ item.name }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+                            datasets: [{
+                                data: [{% for item in budget_data %}{{ item.budget }}{% if not loop.last %}, {% endif %}{% endfor %}],
+                                backgroundColor: [
+                                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+                                    '#FF9F40', '#8AC249', '#EA526F', '#23B5D3', '#279AF1'
+                                ]
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'right'
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.label || '';
+                                            const value = context.raw || 0;
+                                            return `${label}: $${value.toFixed(2)}`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                </script>
+            {% else %}
+                <div class="no-data">
+                    <p>No budget data available. Make sure you have:</p>
+                    <ol>
+                        <li><a href="{{ url_for('categories') }}">Added categories with percentages</a></li>
+                        <li><a href="{{ url_for('salary') }}">Added your salary</a></li>
+                    </ol>
+                </div>
+            {% endif %}
+        </main>
     </div>
+</body>
+</body>
 </body>
 </html>

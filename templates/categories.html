@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Categories</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .edit-form {
+            display: none;
+        }
+        .edit-mode .category-display {
+            display: none;
+        }
+        .edit-mode .edit-form {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Manage Budget Categories</h1>
+            <nav>
+                <a href="{{ url_for('dashboard') }}" class="menu-item">Dashboard</a>
+                <a href="{{ url_for('categories') }}" class="active">Manage Categories</a>
+                <a href="{{ url_for('salary') }}" class="menu-item">Add Salary</a>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Log out</a>
+            </nav>
+        </header>
+        
+        <main>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <section class="add-category">
+                <h2>Add New Category</h2>
+                <form action="{{ url_for('categories') }}" method="post">
+                    <div class="form-group">
+                        <label for="name">Category Name:</label>
+                        <input type="text" id="name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="percentage">Percentage (%):</label>
+                        <input type="number" id="percentage" name="percentage" step="0.01" min="0" max="100" required>
+                    </div>
+                    <button type="submit" class="btn">Add Category</button>
+                </form>
+            </section>
+            
+            <section class="categories-list">
+                <h2>Your Categories</h2>
+                {% if categories %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Percentage</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for category in categories %}
+                                <tr id="category-row-{{ category.id }}">
+                                    <td>{{ category.name }}</td>
+                                    <td>
+                                        <div class="category-display">
+                                            <span>{{ category.percentage }}%</span>
+                                        </div>
+                                        <div class="edit-form">
+                                            <form action="{{ url_for('update_category', id=category.id) }}" method="post">
+                                                <input type="number" name="percentage" value="{{ category.percentage }}" step="0.01" min="0" max="100" required>
+                                                <button type="submit" class="btn-save">Save</button>
+                                                <button type="button" class="btn-cancel" onclick="cancelEdit({{ category.id }})">Cancel</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="category-display">
+                                            <button type="button" class="btn-edit" onclick="editCategory({{ category.id }})">Edit</button>
+                                            <form action="{{ url_for('delete_category', id=category.id) }}" method="post" style="display: inline;">
+                                                <button type="submit" class="btn-delete">Delete</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td><strong>Total</strong></td>
+                                <td>
+                                    <strong id="total-percentage">
+                                        {{ "%.2f"|format(categories|sum(attribute='percentage')) }}%
+                                    </strong>
+                                </td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    <div id="percentage-warning" style="color: red; margin-top: 10px;"></div>
+                    <script>
+                        // Check if total percentage is 100%
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const totalPercentage = parseFloat("{{ categories|sum(attribute='percentage') }}");
+                            const warningElement = document.getElementById('percentage-warning');
+                            
+                            if (Math.abs(totalPercentage - 100) > 0.01) {
+                                warningElement.textContent = 'Warning: Your category percentages do not add up to 100%. Current total: ' + totalPercentage.toFixed(2) + '%';
+                            }
+                        });
+
+                        // Functions for editing categories
+                        function editCategory(id) {
+                            const row = document.getElementById('category-row-' + id);
+                            row.classList.add('edit-mode');
+                        }
+
+                        function cancelEdit(id) {
+                            const row = document.getElementById('category-row-' + id);
+                            row.classList.remove('edit-mode');
+                        }
+                    </script>
+                {% else %}
+                    <p>No categories added yet. Add your first category above.</p>
+                {% endif %}
+            </section>
+        </main>
+    </div>
+</body>
+</html>

@@ -5,7 +5,14 @@ conn = sqlite3.connect('database.db')
 c = conn.cursor()
 
 # Delete the user with id = 1 (first user)
-c.execute('DELETE FROM users WHERE id = 1')
+c.execute(
+    f'CREATE TABLE categories(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    percentage REAL NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users (id)
+);')
 
 # Commit the changes and close the connection
 conn.commit()
