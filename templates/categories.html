@@ -20,11 +20,13 @@
 <body>
     <div class="container">
         <header>
-            <h1>Manage Budget Categories</h1>
+            <h1>Welcome to your Finance Dashboard, {{ username }}</h1>
             <nav>
                 <a href="{{ url_for('dashboard') }}" class="menu-item">Dashboard</a>
                 <a href="{{ url_for('categories') }}" class="active">Manage Categories</a>
                 <a href="{{ url_for('salary') }}" class="menu-item">Add Salary</a>
+                <a href="{{ url_for('expenses') }}" class="menu-item">Expenses</a>
+                <a href="{{ url_for('charts') }}" class="menu-item">Charts</a>
                 <a href="{{ url_for('logout') }}" class="logout-btn">Log out</a>
             </nav>
         </header>

@@ -14,6 +14,7 @@
                 <a href="{{ url_for('dashboard') }}" class="menu-item">Dashboard</a>
                 <a href="{{ url_for('categories') }}" class="menu-item">Manage Categories</a>
                 <a href="{{ url_for('salary') }}" class="active">Add Salary</a>
+                <a href="{{ url_for('expenses') }}" class="menu-item">Expenses</a>
                 <a href="{{ url_for('logout') }}" class="logout-btn">Log out</a>
             </nav>
         </header>
@@ -27,12 +28,33 @@
                 {% endif %}
             {% endwith %}
             
+            <section class="month-selector">
+                <h2>{{ month_name }} {{ current_year }} Salary</h2>
+                <form method="GET" action="{{ url_for('salary') }}">
+                    <select name="month" onchange="this.form.submit()">
+                        {% for i in range(1, 13) %}
+                            <option value="{{ i }}" {% if i == selected_month %}selected{% endif %}>
+                                {{ calendar_months[i] }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <select name="year" onchange="this.form.submit()">
+                        {% for year in range(current_year-5, current_year+1) %}
+                            <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>
+                                {{ year }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </section>
+            
             <section class="add-salary">
                 <h2>Add Salary for {{ month_name }} {{ current_year }}</h2>
                 <form action="{{ url_for('salary') }}" method="post">
                     <div class="form-group">
                         <label for="amount">Amount:</label>
                         <input type="number" id="amount" name="amount" step="0.01" min="0" required>
+                        <input type="date" id="date" name="date" required>
                     </div>
                     <button type="submit" class="btn">Add Salary</button>
                 </form>
@@ -52,7 +74,7 @@
             </section>
             
             <section class="salary-list">
-                <h2>Salary Entries for {{ month_name }}</h2>
+                <h2>Salary Entries for {{ month_name }} {{ current_year }}</h2>
                 {% if monthly_salaries %}
                     <table>
                         <thead>

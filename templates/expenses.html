@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Expenses</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Manage Your Expenses</h1>
+            <nav>
+                <a href="{{ url_for('dashboard') }}" class="menu-item">Dashboard</a>
+                <a href="{{ url_for('categories') }}" class="menu-item">Manage Categories</a>
+                <a href="{{ url_for('salary') }}" class="menu-item">Add Salary</a>
+                <a href="{{ url_for('expenses') }}" class="active">Expenses</a>
+                <a href="{{ url_for('charts') }}" class="menu-item">Charts</a>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Log out</a>
+            </nav>
+        </header>
+        
+        <main>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <section class="month-selector">
+                <h2>{{ month_name }} {{ current_year }} Expenses</h2>
+                <form method="GET" action="{{ url_for('expenses') }}">
+                    <select name="month" onchange="this.form.submit()">
+                        {% for i in range(1, 13) %}
+                            <option value="{{ i }}" {% if i == selected_month %}selected{% endif %}>
+                                {{ calendar_months[i] }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <select name="year" onchange="this.form.submit()">
+                        {% for year in range(current_year-5, current_year+1) %}
+                            <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>
+                                {{ year }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </section>
+            
+            <section class="add-expense">
+                <h2>Add New Expense</h2>
+                <form method="POST" action="{{ url_for('expenses') }}">
+                    <div class="form-group">
+                        <label for="category">Category:</label>
+                        <select name="category_id" id="category" required>
+                            {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="amount">Amount ($):</label>
+                        <input type="number" step="0.01" name="amount" id="amount" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description:</label>
+                        <input type="text" name="description" id="description">
+                    </div>
+                    <div class="form-group">
+                        <label for="date">Date:</label>
+                        <input type="date" name="date" id="date" required>
+                    </div>
+                    <button type="submit" class="btn">Add Expense</button>
+                </form>
+            </section>
+            
+            <section class="expenses-list">
+                <h2>Current Month Expenses</h2>
+                {% if monthly_expenses %}
+                    <div class="expenses-by-category">
+                        {% for category_name, expenses in expenses_by_category.items() %}
+                            <div class="category-expenses">
+                                <h3>{{ category_name }}</h3>
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Description</th>
+                                            <th>Amount</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for expense in expenses %}
+                                            <tr>
+                                                <td>{{ expense.date }}</td>
+                                                <td>{{ expense.description }}</td>
+                                                <td>${{ "%.2f"|format(expense.amount) }}</td>
+                                                <td>
+                                                    <form method="POST" action="{{ url_for('delete_expense', id=expense.id) }}">
+                                                        <button type="submit" class="delete-btn">Delete</button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                        <tr class="category-total">
+                                            <td colspan="2"><strong>Total</strong></td>
+                                            <td colspan="2"><strong>${{ "%.2f"|format(category_totals[category_name]) }}</strong></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="total-expenses">
+                        <h3>Total Expenses: ${{ "%.2f"|format(total_expenses) }}</h3>
+                    </div>
+                {% else %}
+                    <p>No expenses recorded for this month.</p>
+                {% endif %}
+            </section>
+            
+            <!-- <section class="expense-charts">
+                <h2>Expense Trends</h2>
+                <div class="chart-container">
+                    <canvas id="monthlyExpensesChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="categoryExpensesChart"></canvas>
+                </div>
+            </section>
+            
+            <script>
+                // Monthly expenses chart
+                const monthlyCtx = document.getElementById('monthlyExpensesChart').getContext('2d');
+                const monthlyExpensesChart = new Chart(monthlyCtx, {
+                    type: 'line',
+                    data: {
+                        labels: {{ monthly_labels|tojson }},
+                        datasets: [{
+                            label: 'Monthly Expenses',
+                            data: {{ monthly_data|tojson }},
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+                
+                // Category expenses chart
+                const categoryCtx = document.getElementById('categoryExpensesChart').getContext('2d');
+                const categoryExpensesChart = new Chart(categoryCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: {{ category_labels|tojson }},
+                        datasets: [{
+                            data: {{ category_data|tojson }},
+                            backgroundColor: [
+                                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+                                '#FF9F40', '#8AC249', '#EA526F', '#23B5D3', '#279AF1'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'right'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.raw || 0;
+                                        return `${label}: $${value.toFixed(2)}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            </script> -->
+        </main>
+    </div>
+</body>
+</html>

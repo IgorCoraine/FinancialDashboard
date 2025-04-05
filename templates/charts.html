@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Charts</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Financial Charts</h1>
+            <nav>
+                <a href="{{ url_for('dashboard') }}" class="menu-item">Dashboard</a>
+                <a href="{{ url_for('categories') }}" class="menu-item">Manage Categories</a>
+                <a href="{{ url_for('salary') }}" class="menu-item">Add Salary</a>
+                <a href="{{ url_for('expenses') }}" class="menu-item">Expenses</a>
+                <a href="{{ url_for('charts') }}" class="active">Charts</a>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Log out</a>
+            </nav>
+        </header>
+        
+        <main>
+            <section class="chart-section">
+                <h2>Income vs Expenses (Last 12 Months)</h2>
+                <div class="chart-container">
+                    <canvas id="incomeVsExpensesChart"></canvas>
+                </div>
+            </section>
+            
+            <section class="chart-section">
+                <h2>Expenses by Category (Last 12 Months)</h2>
+                <div class="chart-container">
+                    <canvas id="categoryExpensesChart"></canvas>
+                </div>
+            </section>
+            
+            <section class="chart-section">
+                <h2>Monthly Expenses by Category</h2>
+                {% for category in categories %}
+                <div class="category-chart-container">
+                    <h3>{{ category.name }}</h3>
+                    <canvas id="category{{ category.id }}Chart"></canvas>
+                </div>
+                {% endfor %}
+            </section>
+            
+            <script>
+                // Income vs Expenses Chart
+                const incomeVsExpensesCtx = document.getElementById('incomeVsExpensesChart').getContext('2d');
+                const incomeVsExpensesChart = new Chart(incomeVsExpensesCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: {{ month_labels|tojson }},
+                        datasets: [
+                            {
+                                label: 'Income',
+                                data: {{ income_data|tojson }},
+                                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Expenses',
+                                data: {{ expense_data|tojson }},
+                                backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                                borderColor: 'rgba(255, 99, 132, 1)',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Amount ($)'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Month'
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Income vs Expenses (Last 12 Months)'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += new Intl.NumberFormat('en-US', { 
+                                                style: 'currency', 
+                                                currency: 'USD' 
+                                            }).format(context.parsed.y);
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                // Category Expenses Chart (Stacked)
+                const categoryExpensesCtx = document.getElementById('categoryExpensesChart').getContext('2d');
+                const categoryExpensesChart = new Chart(categoryExpensesCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: {{ month_labels|tojson }},
+                        datasets: {{ category_datasets|tojson }}
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        scales: {
+                            x: {
+                                stacked: true,
+                                title: {
+                                    display: true,
+                                    text: 'Month'
+                                }
+                            },
+                            y: {
+                                stacked: true,
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Amount ($)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Monthly Expenses by Category (Stacked)'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += new Intl.NumberFormat('en-US', { 
+                                                style: 'currency', 
+                                                currency: 'USD' 
+                                            }).format(context.parsed.y);
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                // Individual Category Charts
+                {% for category in categories %}
+                const category{{ category.id }}Ctx = document.getElementById('category{{ category.id }}Chart').getContext('2d');
+                const category{{ category.id }}Chart = new Chart(category{{ category.id }}Ctx, {
+                    type: 'line',
+                    data: {
+                        labels: {{ month_labels|tojson }},
+                        datasets: [{
+                            label: '{{ category.name }}',
+                            data: {{ category_monthly_data[category.id]|tojson }},
+                            backgroundColor: 'rgba({{ category_colors[loop.index0] }})',
+                            borderColor: 'rgba({{ category_colors[loop.index0] }})',
+                            borderWidth: 2,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Amount ($)'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Month'
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: '{{ category.name }} Monthly Expenses'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += new Intl.NumberFormat('en-US', { 
+                                                style: 'currency', 
+                                                currency: 'USD' 
+                                            }).format(context.parsed.y);
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                {% endfor %}
+            </script>
+        </main>
+    </div>
+</body>
+</html>
