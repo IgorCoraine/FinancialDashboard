@@ -4,26 +4,33 @@ import sqlite3
 from datetime import datetime, timedelta
 import calendar
 
+# Initialize Flask application
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # for session management
 
+# Database connection functions
 def get_db_connection():
+    """Create and return a database connection with row factory"""
     conn = sqlite3.connect('database.db')
     conn.row_factory = sqlite3.Row
     return conn
 
 def get_user_id(username):
+    """Get user ID from username"""
     conn = get_db_connection()
     user = conn.execute('SELECT id FROM users WHERE username = ?', (username,)).fetchone()
     conn.close()
     return user['id'] if user else None
 
+# Route handlers
 @app.route('/')
 def home():
+    """Redirect to dashboard from home page"""
     return redirect(url_for('dashboard'))
 
 @app.route('/dashboard')
 def dashboard():
+    """Display the main dashboard with budget information"""
     # Check if user is logged in
     if 'username' not in session:
         return redirect(url_for('login'))  # Redirect to login if not logged in
@@ -129,6 +136,7 @@ def dashboard():
 
 @app.route('/categories', methods=['GET', 'POST'])
 def categories():
+    """Manage expense categories"""
     if 'username' not in session:
         return redirect(url_for('login'))
     
@@ -155,6 +163,7 @@ def categories():
 
 @app.route('/categories/update/<int:id>', methods=['POST'])
 def update_category(id):
+    """Update an existing category"""
     if 'username' not in session:
         return redirect(url_for('login'))
     
@@ -174,6 +183,7 @@ def update_category(id):
 
 @app.route('/categories/delete/<int:id>', methods=['POST'])
 def delete_category(id):
+    """Delete a category"""
     if 'username' not in session:
         return redirect(url_for('login'))
     
@@ -189,6 +199,7 @@ def delete_category(id):
 
 @app.route('/salary', methods=['GET', 'POST'])
 def salary():
+    """Manage salary entries"""
     if 'username' not in session:
         return redirect(url_for('login'))
     
@@ -251,6 +262,7 @@ def salary():
 
 @app.route('/salary/delete/<int:id>', methods=['POST'])
 def delete_salary(id):
+    """Delete a salary entry"""
     if 'username' not in session:
         return redirect(url_for('login'))
     
@@ -266,6 +278,7 @@ def delete_salary(id):
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """Handle user login"""
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -286,6 +299,7 @@ def login():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    """Handle user registration"""
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -305,12 +319,14 @@ def register():
 
 @app.route('/logout')
 def logout():
+    """Handle user logout"""
     # Clear the session to log out the user
     session.pop('username', None)
     return redirect(url_for('login'))
 
 @app.route('/expenses', methods=['GET', 'POST'])
 def expenses():
+    """Manage expenses"""
     if 'username' not in session:
         return redirect(url_for('login'))
     
@@ -391,7 +407,6 @@ def expenses():
     for i in range(12):
         current = start_date + timedelta(days=30*i)
         month_start = f"{current.year}-{current.month:02d}-01"
-        
         if current.month == 12:
             next_month_year = current.year + 1
             next_month = 1
@@ -435,6 +450,7 @@ def expenses():
 
 @app.route('/expenses/delete/<int:id>', methods=['POST'])
 def delete_expense(id):
+    """Delete an expense"""
     if 'username' not in session:
         return redirect(url_for('login'))
     
@@ -450,6 +466,7 @@ def delete_expense(id):
 
 @app.route('/charts')
 def charts():
+    """Display financial charts"""
     if 'username' not in session:
         return redirect(url_for('login'))
     
@@ -557,6 +574,7 @@ def charts():
 
 @app.route('/investments', methods=['GET', 'POST'])
 def investments():
+    """Manage investments"""
     if 'username' not in session:
         return redirect(url_for('login'))
     
@@ -691,15 +709,15 @@ def investments():
     monthly_gross_profits = []
     monthly_net_profits = []
 
-    # Começar do mês atual e voltar 11 meses
+    # Start from current month and go back 11 months
     for i in range(12):
-        # Calcular o mês e ano corretos
-        # Para o mês atual, i = 0
-        # Para 11 meses atrás, i = 11
+        # Calculate the correct month and year
+        # For current month, i = 0
+        # For 11 months ago, i = 11
         month = selected_month - i
         year = selected_year
         
-        # Ajustar o ano se o mês for negativo ou zero
+        # Adjust the year if month is negative or zero
         while month <= 0:
             month += 12
             year -= 1
@@ -707,7 +725,7 @@ def investments():
         # Format date strings for SQL queries
         month_start = f"{year}-{month:02d}-01"
         
-        # Calcular o próximo mês para o fim do período
+        # Calculate the next month for the end of period
         next_month = month + 1
         next_year = year
         if next_month > 12:
@@ -828,6 +846,7 @@ def investments():
 
 @app.route('/investments/delete/<int:id>', methods=['POST'])
 def delete_investment(id):
+    """Delete an investment and its transactions"""
     if 'username' not in session:
         return redirect(url_for('login'))
     
@@ -849,6 +868,7 @@ def delete_investment(id):
 
 @app.route('/investments/delete_transaction/<int:id>', methods=['POST'])
 def delete_investment_transaction(id):
+    """Delete an investment transaction"""
     if 'username' not in session:
         return redirect(url_for('login'))
     
@@ -864,6 +884,7 @@ def delete_investment_transaction(id):
 
 @app.route('/investment_categories', methods=['GET', 'POST'])
 def investment_categories():
+    """Manage investment categories"""
     if 'username' not in session:
         return redirect(url_for('login'))
     
@@ -888,6 +909,7 @@ def investment_categories():
 
 @app.route('/investment_categories/delete/<int:id>', methods=['POST'])
 def delete_investment_category(id):
+    """Delete an investment category if not in use"""
     if 'username' not in session:
         return redirect(url_for('login'))
     
@@ -911,6 +933,7 @@ def delete_investment_category(id):
 
 @app.route('/goals', methods=['GET', 'POST'])
 def goals():
+    """Manage financial goals"""
     if 'username' not in session:
         return redirect(url_for('login'))
     
@@ -959,6 +982,7 @@ def goals():
 
 @app.route('/goals/update/<int:id>', methods=['POST'])
 def update_goal(id):
+    """Update a financial goal"""
     if 'username' not in session:
         return redirect(url_for('login'))
     
@@ -997,6 +1021,7 @@ def update_goal(id):
 
 @app.route('/goals/delete/<int:id>', methods=['POST'])
 def delete_goal(id):
+    """Delete a financial goal"""
     if 'username' not in session:
         return redirect(url_for('login'))
     
@@ -1010,5 +1035,47 @@ def delete_goal(id):
     flash('Goal deleted successfully', 'success')
     return redirect(url_for('goals'))
 
+@app.route('/change_password', methods=['GET', 'POST'])
+def change_password():
+    """Handle password change"""
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        current_password = request.form['current_password']
+        new_password = request.form['new_password']
+        confirm_password = request.form['confirm_password']
+        
+        # Verify that new password and confirmation match
+        if new_password != confirm_password:
+            flash('A nova senha e a confirmação não coincidem', 'danger')
+            return redirect(url_for('change_password'))
+        
+        # Get user from database
+        conn = get_db_connection()
+        user = conn.execute('SELECT * FROM users WHERE username = ?', 
+                           (session['username'],)).fetchone()
+        
+        # Verify current password
+        if not check_password_hash(user['password'], current_password):
+            conn.close()
+            flash('Senha atual incorreta', 'danger')
+            return redirect(url_for('change_password'))
+        
+        # Hash the new password
+        hashed_password = generate_password_hash(new_password)
+        
+        # Update password in database
+        conn.execute('UPDATE users SET password = ? WHERE username = ?', 
+                    (hashed_password, session['username']))
+        conn.commit()
+        conn.close()
+        
+        flash('Senha alterada com sucesso', 'success')
+        return redirect(url_for('dashboard'))
+    
+    return render_template('change_password.html')
+
+# Run the application
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,3 +1,4 @@
+/* Base Variables */
 :root {
   --primary-color: #D56199;
   --primary-dark: #861A60;
@@ -6,6 +7,7 @@
   --text-light: #f5f5f5;
 }
 
+/* Base Layout */
 body {
   background-color: var(--bg-medium);
   color: var(--text-light);
@@ -28,12 +30,14 @@ body {
   max-width: 60rem;
 }
 
+/* Typography */
 h1 {
   color: var(--primary-color);
   text-align: center;
   margin-bottom: 1.5rem;
 }
 
+/* Form Elements */
 form {
   display: flex;
   flex-direction: column;
@@ -74,7 +78,7 @@ button:hover {
   background-color: var(--primary-dark);
 }
 
-/* Make the menu-item selector more specific by including the 'a' tag */
+/* Navigation */
 a.menu-item{
   color: white;
   background-color: var(--primary-color);
@@ -101,7 +105,7 @@ a.active {
   border-radius: 0.25rem;
 }
 
-
+/* Notifications */
 .messages {
   list-style-type: none;
   padding: 0;
@@ -132,32 +136,47 @@ a.active {
   text-decoration: none;
 }
 
-/* ==========================================================================
-   Table Styles
-   ========================================================================== */
-   table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 1.25rem;
-    background: var(--bg-medium);
-    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.3);
+.config-btn {
+  position: absolute;
+  top: 1rem;
+  right: 5rem;
+  background-color: var(--primary-dark);
+  color: white;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+}
+
+.config-btn:hover {
+  background-color: var(--primary-color);
+  text-decoration: none;
+}
+
+/* Table Styles */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1.25rem;
+  background: var(--bg-medium);
+  box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.3);
 }
 
 th, td {
-    padding: 0.75rem;
-    text-align: left;
-    border-bottom: 0.063rem solid var(--border-color);
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 0.063rem solid var(--border-color);
 }
 
 th {
-    background-color: var(--bg-light);
-    color: var(--text-light);
+  background-color: var(--bg-light);
+  color: var(--text-light);
 }
 
 tr:hover {
-    background-color: #383838;
+  background-color: #383838;
 }
 
+/* Chart Components */
 .chart-container {
   flex: 1;
   background-color: var(--bg-medium);
@@ -177,7 +196,7 @@ tr:hover {
   height: auto !important;
 }
 
-
+/* Summary Components */
 .month-summary .summary-boxes {
   display: flex;
   flex-wrap: wrap;
@@ -214,7 +233,7 @@ tr:hover {
   width: 50%;
 }
 
-.summary-cards{
+.summary-cards {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -222,7 +241,8 @@ tr:hover {
   gap: 1rem;
 }
 
-.accordion-button{
+/* Accordion Components */
+.accordion-button {
   background-color: var(--primary-color);
   color: white;
   border: none;
@@ -234,11 +254,10 @@ tr:hover {
   margin-top: 1rem;
 }
 
-.income{
+.income {
   margin-top: 0.5rem;
 }
 
-/* Custom Accordion Styles */
 .custom-accordion {
   width: 100%;
   border: 1px solid #861A60;
@@ -296,7 +315,7 @@ tr:hover {
 }
 
 .accordion-content.active {
-  max-height: 1000px; /* Adjust as needed */
+  max-height: 1000px;
   transition: max-height 0.5s ease-in;
 }
 
@@ -320,7 +339,7 @@ tr:hover {
   margin-bottom: 10px;
 }
 
-/* Transaction Section */
+/* Transaction Components */
 .transaction-section, .add-transaction-section {
   padding: 15px;
   border-bottom: 1px solid var(--bg-medium);
@@ -332,7 +351,6 @@ tr:hover {
   font-size: 1.1rem;
 }
 
-/* Transaction Table */
 .transaction-table-container {
   overflow-x: auto;
 }
@@ -379,7 +397,7 @@ tr:hover {
   color: #0c5460;
 }
 
-/* Form Styles */
+/* Form Layout */
 .transaction-form {
   width: 100%;
 }
@@ -432,7 +450,7 @@ tr:hover {
   padding: 0 10px;
 }
 
-/* Button Styles */
+/* Button Variations */
 .submit-btn, .delete-btn {
   padding: 8px 15px;
   border: none;
@@ -465,7 +483,7 @@ tr:hover {
   font-size: 0.85rem;
 }
 
-/* Message Styles */
+/* Message Components */
 .no-data-message {
   padding: 15px;
   background-color: #d1ecf1;
@@ -474,8 +492,8 @@ tr:hover {
   margin-top: 10px;
 }
 
- /* Custom progress bar styles */
- .goal-progress-container {
+/* Progress Bar */
+.goal-progress-container {
   width: 100%;
   background-color: var(--bg-dark);
   border-radius: 4px;

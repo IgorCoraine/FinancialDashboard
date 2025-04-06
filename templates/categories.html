@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Categories</title>
+    <title>Gerenciar Categorias</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
+        /* Inline styles for category editing */
         .edit-form {
             display: none;
         }
@@ -20,20 +21,22 @@
 <body>
     <div class="container">
         <header>
-            <h1>Welcome to your Finance Dashboard, {{ username }}</h1>
+            <h1>Categorias</h1>
             <nav>
-                <a href="{{ url_for('dashboard') }}" class="menu-item">Dashboard</a>
-                <a href="{{ url_for('categories') }}" class="active">Manage Categories</a>
-                <a href="{{ url_for('salary') }}" class="menu-item">Add Salary</a>
-                <a href="{{ url_for('expenses') }}" class="menu-item">Expenses</a>
-                <a href="{{ url_for('charts') }}" class="menu-item">Charts</a>
-                <a href="{{ url_for('investments') }}" class="menu-item">Investments</a>
-                <a href="{{ url_for('goals') }}" class="menu-item">Goals</a>
-                <a href="{{ url_for('logout') }}" class="logout-btn">Log out</a>
+                <a href="{{ url_for('dashboard') }}" class="menu-item">Painel</a>
+                <a href="{{ url_for('categories') }}" class="active">Gerenciar Categorias</a>
+                <a href="{{ url_for('salary') }}" class="menu-item">Adicionar Renda</a>
+                <a href="{{ url_for('expenses') }}" class="menu-item">Despesas</a>
+                <a href="{{ url_for('charts') }}" class="menu-item">Gráficos</a>
+                <a href="{{ url_for('investments') }}" class="menu-item">Investimentos</a>
+                <a href="{{ url_for('goals') }}" class="menu-item">Metas</a>
+                <a href="{{ url_for('change_password') }}" class="config-btn">Configurações</a>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Sair</a>
             </nav>
         </header>
         
         <main>
+            <!-- Flash messages display -->
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     {% for category, message in messages %}
@@ -42,30 +45,32 @@
                 {% endif %}
             {% endwith %}
             
+            <!-- Add new category form -->
             <section class="add-category">
-                <h2>Add New Category</h2>
+                <h2>Adicionar Nova Categoria</h2>
                 <form action="{{ url_for('categories') }}" method="post">
                     <div class="form-group">
-                        <label for="name">Category Name:</label>
+                        <label for="name">Nome da Categoria:</label>
                         <input type="text" id="name" name="name" required>
                     </div>
                     <div class="form-group">
-                        <label for="percentage">Percentage (%):</label>
+                        <label for="percentage">Porcentagem (%):</label>
                         <input type="number" id="percentage" name="percentage" step="0.01" min="0" max="100" required>
                     </div>
-                    <button type="submit" class="btn">Add Category</button>
+                    <button type="submit" class="btn">Adicionar Categoria</button>
                 </form>
             </section>
             
+            <!-- Categories list -->
             <section class="categories-list">
-                <h2>Your Categories</h2>
+                <h2>Suas Categorias</h2>
                 {% if categories %}
                     <table>
                         <thead>
                             <tr>
-                                <th>Category</th>
-                                <th>Percentage</th>
-                                <th>Actions</th>
+                                <th>Categoria</th>
+                                <th>Porcentagem</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -79,16 +84,16 @@
                                         <div class="edit-form">
                                             <form action="{{ url_for('update_category', id=category.id) }}" method="post">
                                                 <input type="number" name="percentage" value="{{ category.percentage }}" step="0.01" min="0" max="100" required>
-                                                <button type="submit" class="btn-save">Save</button>
-                                                <button type="button" class="btn-cancel" onclick="cancelEdit({{ category.id }})">Cancel</button>
+                                                <button type="submit" class="btn-save">Salvar</button>
+                                                <button type="button" class="btn-cancel" onclick="cancelEdit({{ category.id }})">Cancelar</button>
                                             </form>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="category-display">
-                                            <button type="button" class="btn-edit" onclick="editCategory({{ category.id }})">Edit</button>
+                                            <button type="button" class="btn-edit" onclick="editCategory({{ category.id }})">Editar</button>
                                             <form action="{{ url_for('delete_category', id=category.id) }}" method="post" style="display: inline;">
-                                                <button type="submit" class="btn-delete">Delete</button>
+                                                <button type="submit" class="btn-delete">Excluir</button>
                                             </form>
                                         </div>
                                     </td>
@@ -115,11 +120,11 @@
                             const warningElement = document.getElementById('percentage-warning');
                             
                             if (Math.abs(totalPercentage - 100) > 0.01) {
-                                warningElement.textContent = 'Warning: Your category percentages do not add up to 100%. Current total: ' + totalPercentage.toFixed(2) + '%';
+                                warningElement.textContent = 'Aviso: A soma das porcentagens das categorias não é igual a 100%. Total atual: ' + totalPercentage.toFixed(2) + '%';
                             }
                         });
 
-                        // Functions for editing categories
+                        // Category editing functions
                         function editCategory(id) {
                             const row = document.getElementById('category-row-' + id);
                             row.classList.add('edit-mode');
@@ -131,7 +136,7 @@
                         }
                     </script>
                 {% else %}
-                    <p>No categories added yet. Add your first category above.</p>
+                    <p>Nenhuma categoria adicionada ainda. Adicione sua primeira categoria acima.</p>
                 {% endif %}
             </section>
         </main>

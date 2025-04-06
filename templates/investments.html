@@ -1,29 +1,31 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finance Dashboard</title>
+    <title>Investimentos</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Welcome to your Finance Dashboard, {{ username }}</h1>
+            <h1>Investimentos</h1>
             <nav>
-                <a href="{{ url_for('dashboard') }}" class="menu-item">Dashboard</a>
-                <a href="{{ url_for('categories') }}" class="menu-item">Manage Categories</a>
-                <a href="{{ url_for('salary') }}" class="menu-item">Add Salary</a>
-                <a href="{{ url_for('expenses') }}" class="menu-item">Expenses</a>
-                <a href="{{ url_for('charts') }}" class="menu-item">Charts</a>
-                <a href="{{ url_for('investments') }}" class="active">Investments</a>
-                <a href="{{ url_for('goals') }}" class="menu-item">Goals</a>
-                <a href="{{ url_for('logout') }}" class="logout-btn">Log out</a>
+                <a href="{{ url_for('dashboard') }}" class="menu-item">Painel</a>
+                <a href="{{ url_for('categories') }}" class="menu-item">Gerenciar Categorias</a>
+                <a href="{{ url_for('salary') }}" class="menu-item">Adicionar Renda</a>
+                <a href="{{ url_for('expenses') }}" class="menu-item">Despesas</a>
+                <a href="{{ url_for('charts') }}" class="menu-item">Gráficos</a>
+                <a href="{{ url_for('investments') }}" class="active">Investimentos</a>
+                <a href="{{ url_for('goals') }}" class="menu-item">Metas</a>
+                <a href="{{ url_for('change_password') }}" class="config-btn">Configurações</a>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Sair</a>
             </nav>
         </header>
 
         <main>
+            <!-- Flash messages display -->
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     {% for category, message in messages %}
@@ -32,11 +34,9 @@
                 {% endif %}
             {% endwith %}
             
-            <h1>Investments</h1>
-            
             <!-- Month/Year Selector -->
             <section class="month-selector">
-                <h2>{{ month_name }} {{ current_year }} Investments</h2>
+                <h2>Investimentos de {{ month_name }} {{ current_year }}</h2>
                 <form method="GET" action="{{ url_for('investments') }}">
                     <select name="month" onchange="this.form.submit()">
                         {% for i in range(1, 13) %}
@@ -60,20 +60,20 @@
                 <div class="summary-boxes">
                     <div class="summary-info">
                         <div class="summary-box income">
-                            <h3>Total Invested</h3>
+                            <h3>Total Investido</h3>
                             <p>R$ {{ "%.2f"|format(total_invested) }}</p>
                         </div>
                         <div class="summary-box expenses">
-                            <h3>Total Profit</h3>
+                            <h3>Lucro Total</h3>
                             <p>R$ {{ "%.2f"|format(total_profit) }}</p>
                         </div>
                         <div class="summary-box balance">
-                            <h3>Current Value</h3>
+                            <h3>Valor Atual</h3>
                             <p>R$ {{ "%.2f"|format(total_current_value) }}</p>
                         </div>
                         <div class="summary-box">
-                            <h3>Profit Percentage</h3>
-                            <p>{{ "%.2f"|format(gross_profit_percentage) }}% ({{ "%.2f"|format(net_profit_percentage) }}% net)</p>
+                            <h3>Percentual de Lucro</h3>
+                            <p>{{ "%.2f"|format(gross_profit_percentage) }}% ({{ "%.2f"|format(net_profit_percentage) }}% líquido)</p>
                         </div>
                     </div>
                     <div class="chart-container">
@@ -84,21 +84,21 @@
 
             <!-- Last Month Performance -->
             <section class="budget-table">
-                <h2>Last Month Performance</h2>
+                <h2>Desempenho do Mês Anterior</h2>
                 <table>
                     <thead>
                         <tr>
-                            <th>Metric</th>
-                            <th>Value</th>
+                            <th>Métrica</th>
+                            <th>Valor</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td>Gross Profit</td>
+                            <td>Lucro Bruto</td>
                             <td>{{ "%.2f"|format(last_month_gross_profit_percentage) }}%</td>
                         </tr>
                         <tr>
-                            <td>Net Profit</td>
+                            <td>Lucro Líquido</td>
                             <td>{{ "%.2f"|format(last_month_net_profit_percentage) }}%</td>
                         </tr>
                     </tbody>
@@ -107,20 +107,10 @@
 
             <!-- Charts -->
             <div class="row mb-4">
-                <!-- <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5>Investment Distribution by Category</h5>
-                        </div>
-                        <div class="card-body">
-                            <canvas id="categoryPieChart2"></canvas>
-                        </div>
-                    </div>
-                </div> -->
                 <div class="col-md-6">
                     <div class="card">
                         <div class="card-header">
-                            <h5>Total Investment Value (Last 12 Months)</h5>
+                            <h5>Valor Total dos Investimentos (Últimos 12 Meses)</h5>
                         </div>
                         <div class="card-body">
                             <canvas id="investmentLineChart"></canvas>
@@ -133,7 +123,7 @@
                 <div class="col-md-12">
                     <div class="card">
                         <div class="card-header">
-                            <h5>Monthly Profit (Last 12 Months)</h5>
+                            <h5>Lucro Mensal (Últimos 12 Meses)</h5>
                         </div>
                         <div class="card-body">
                             <canvas id="profitLineChart"></canvas>
@@ -145,17 +135,17 @@
             <!-- Add New Investment -->
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5>Add New Investment</h5>
+                    <h5>Adicionar Novo Investimento</h5>
                 </div>
                 <div class="form-group">
                     <form method="post" class="row g-3">
                         <input type="hidden" name="action" value="add_investment">
                         <div class="col-md-4">
-                            <label for="name" class="form-label">Investment Name</label>
+                            <label for="name" class="form-label">Nome do Investimento</label>
                             <input type="text" id="name" name="name" required>
                         </div>
                         <div class="col-md-4">
-                            <label for="category_id" class="form-label">Category</label>
+                            <label for="category_id" class="form-label">Categoria</label>
                             <select class="form-select" id="category_id" name="category_id" required>
                                 {% for category in investment_categories %}
                                     <option value="{{ category.id }}">{{ category.name }}</option>
@@ -163,36 +153,36 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label for="maturity_date" class="form-label">Maturity Date (if applicable)</label>
+                            <label for="maturity_date" class="form-label">Data de Vencimento (se aplicável)</label>
                             <input type="date" id="maturity_date" name="maturity_date">
                         </div>
                         <div class="col-md-4">
-                            <label for="liquidity" class="form-label">Liquidity</label>
+                            <label for="liquidity" class="form-label">Liquidez</label>
                             <select class="form-select" id="liquidity" name="liquidity" required>
-                                <option value="Immediate">Immediate</option>
+                                <option value="Immediate">Imediata</option>
                                 <option value="D+1">D+1</option>
                                 <option value="D+30">D+30</option>
                                 <option value="D+60">D+60</option>
                                 <option value="D+90">D+90</option>
                                 <option value="D+180">D+180</option>
                                 <option value="D+360">D+360</option>
-                                <option value="Maturity">At Maturity</option>
+                                <option value="Maturity">No Vencimento</option>
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label for="institution" class="form-label">Institution</label>
+                            <label for="institution" class="form-label">Instituição</label>
                             <input type="text" id="institution" name="institution" required>
                         </div>
                         <div class="col-md-4">
-                            <label for="initial_amount" class="form-label">Initial Amount</label>
+                            <label for="initial_amount" class="form-label">Valor Inicial</label>
                             <input type="number" step="0.01" id="initial_amount" name="initial_amount" required>
                         </div>
                         <div class="col-md-4">
-                            <label for="transaction_date" class="form-label">Date</label>
+                            <label for="transaction_date" class="form-label">Data</label>
                             <input type="date" id="transaction_date" name="transaction_date" required>
                         </div>
                         <div class="col-12">
-                            <button type="submit" class="btn btn-primary">Add Investment</button>
+                            <button type="submit" class="btn btn-primary">Adicionar Investimento</button>
                         </div>
                     </form>
                 </div>
@@ -201,17 +191,17 @@
             <!-- Add New Category -->
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5>Add New Investment Category</h5>
+                    <h5>Adicionar Nova Categoria de Investimento</h5>
                 </div>
                 <div class="form-group">
                     <form method="post" class="row g-3">
                         <input type="hidden" name="action" value="add_category">
                         <div class="col-md-6">
-                            <label for="category_name" class="form-label">Category Name</label>
+                            <label for="category_name" class="form-label">Nome da Categoria</label>
                             <input type="text" class="form-control" id="category_name" name="category_name" required>
                         </div>
                         <div class="col-12">
-                            <button type="submit" class="btn btn-primary">Add Category</button>
+                            <button type="submit" class="btn btn-primary">Adicionar Categoria</button>
                         </div>
                     </form>
                 </div>
@@ -220,7 +210,7 @@
             <!-- Investment List -->
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5>Your Investments</h5>
+                    <h5>Seus Investimentos</h5>
                 </div>
                 <div class="card-body">
                     <div class="custom-accordion" id="investmentsAccordion">
@@ -239,17 +229,17 @@
                                 <div class="investment-details">
                                     <div class="details-row">
                                         <div class="detail-item">
-                                            <strong>Maturity Date:</strong> {{ investment.maturity_date or 'N/A' }}
+                                            <strong>Data de Vencimento:</strong> {{ investment.maturity_date or 'N/A' }}
                                         </div>
                                         <div class="detail-item">
-                                            <strong>Liquidity:</strong> {{ investment.liquidity }}
+                                            <strong>Liquidez:</strong> {{ investment.liquidity }}
                                         </div>
                                         <div class="detail-item">
-                                            <strong>Total Profit:</strong> R$ {{ "%.2f"|format(investment.total_profit or 0) }}
+                                            <strong>Lucro Total:</strong> R$ {{ "%.2f"|format(investment.total_profit or 0) }}
                                         </div>
                                         <div class="detail-item">
-                                            <form method="post" action="{{ url_for('delete_investment', id=investment.id) }}" onsubmit="return confirm('Are you sure you want to delete this investment?');">
-                                                <button type="submit" class="delete-btn">Delete Investment</button>
+                                            <form method="post" action="{{ url_for('delete_investment', id=investment.id) }}" onsubmit="return confirm('Tem certeza que deseja excluir este investimento?');">
+                                                <button type="submit" class="delete-btn">Excluir Investimento</button>
                                             </form>
                                         </div>
                                     </div>
@@ -257,17 +247,17 @@
                                 
                                 <!-- Transaction History -->
                                 <div class="transaction-section">
-                                    <h3>Transaction History</h3>
+                                    <h3>Histórico de Transações</h3>
                                     {% if investment_transactions[investment.id]|length > 0 %}
                                     <div class="transaction-table-container">
                                         <table class="transaction-table">
                                             <thead>
                                                 <tr>
-                                                    <th>Date</th>
-                                                    <th>Type</th>
-                                                    <th>Amount</th>
-                                                    <th>Profit</th>
-                                                    <th>Action</th>
+                                                    <th>Data</th>
+                                                    <th>Tipo</th>
+                                                    <th>Valor</th>
+                                                    <th>Lucro</th>
+                                                    <th>Ação</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -276,14 +266,22 @@
                                                     <td>{{ transaction.date }}</td>
                                                     <td>
                                                         <span class="transaction-type {{ transaction.transaction_type }}">
-                                                            {{ transaction.transaction_type|capitalize }}
+                                                            {% if transaction.transaction_type == 'deposit' %}
+                                                                Depósito
+                                                            {% elif transaction.transaction_type == 'withdrawal' %}
+                                                                Retirada
+                                                            {% elif transaction.transaction_type == 'profit' %}
+                                                                Lucro
+                                                            {% else %}
+                                                                {{ transaction.transaction_type|capitalize }}
+                                                            {% endif %}
                                                         </span>
                                                     </td>
                                                     <td>R$ {{ "%.2f"|format(transaction.amount) }}</td>
                                                     <td>{% if transaction.profit_amount %}R$ {{ "%.2f"|format(transaction.profit_amount) }}{% else %}—{% endif %}</td>
                                                     <td>
-                                                        <form method="post" action="{{ url_for('delete_investment_transaction', id=transaction.id) }}" onsubmit="return confirm('Are you sure you want to delete this transaction?');">
-                                                            <button type="submit" class="delete-btn small">Delete</button>
+                                                        <form method="post" action="{{ url_for('delete_investment_transaction', id=transaction.id) }}" onsubmit="return confirm('Tem certeza que deseja excluir esta transação?');">
+                                                            <button type="submit" class="delete-btn small">Excluir</button>
                                                         </form>
                                                     </td>
                                                 </tr>
@@ -292,29 +290,29 @@
                                         </table>
                                     </div>
                                     {% else %}
-                                    <div class="no-data-message">No transactions recorded for this investment yet.</div>
+                                    <div class="no-data-message">Nenhuma transação registrada para este investimento ainda.</div>
                                     {% endif %}
                                 </div>
                                 
                                 <!-- Add Transaction Form -->
                                 <div class="add-transaction-section">
-                                    <h3>Add Transaction</h3>
+                                    <h3>Adicionar Transação</h3>
                                     <form method="post" class="transaction-form">
                                         <input type="hidden" name="action" value="add_transaction">
                                         <input type="hidden" name="investment_id" value="{{ investment.id }}">
                                         
                                         <div class="form-row">
                                             <div class="form-group">
-                                                <label for="transaction_type{{ investment.id }}">Type</label>
+                                                <label for="transaction_type{{ investment.id }}">Tipo</label>
                                                 <select id="transaction_type{{ investment.id }}" name="transaction_type" required>
-                                                    <option value="deposit">Deposit</option>
-                                                    <option value="withdrawal">Withdrawal</option>
-                                                    <option value="profit">Profit</option>
+                                                    <option value="deposit">Depósito</option>
+                                                    <option value="withdrawal">Retirada</option>
+                                                    <option value="profit">Lucro</option>
                                                 </select>
                                             </div>
                                             
                                             <div class="form-group">
-                                                <label for="amount{{ investment.id }}">Amount</label>
+                                                <label for="amount{{ investment.id }}">Valor</label>
                                                 <div class="input-with-prefix">
                                                     <span class="prefix">R$</span>
                                                     <input type="number" step="0.01" id="amount{{ investment.id }}" name="amount" required>
@@ -322,7 +320,7 @@
                                             </div>
                                             
                                             <div class="form-group">
-                                                <label for="profit_amount{{ investment.id }}">Profit Amount</label>
+                                                <label for="profit_amount{{ investment.id }}">Valor do Lucro</label>
                                                 <div class="input-with-prefix">
                                                     <span class="prefix">R$</span>
                                                     <input type="number" step="0.01" id="profit_amount{{ investment.id }}" name="profit_amount">
@@ -330,13 +328,13 @@
                                             </div>
                                             
                                             <div class="form-group">
-                                                <label for="transaction_date{{ investment.id }}">Date</label>
+                                                <label for="transaction_date{{ investment.id }}">Data</label>
                                                 <input type="date" id="transaction_date{{ investment.id }}" name="transaction_date" required>
                                             </div>
                                         </div>
                                         
                                         <div class="form-actions">
-                                            <button type="submit" class="submit-btn">Add Transaction</button>
+                                            <button type="submit" class="submit-btn">Adicionar Transação</button>
                                         </div>
                                     </form>
                                 </div>
@@ -347,7 +345,7 @@
                     
                     {% if not investments %}
                     <div class="no-data-message">
-                        You don't have any investments yet. Add your first investment using the form above.
+                        Você não tem nenhum investimento ainda. Adicione seu primeiro investimento usando o formulário acima.
                     </div>
                     {% endif %}
                 </div>
@@ -400,39 +398,6 @@
                         }
                     }
                 });
-                
-                // // Second Category Pie Chart
-                // const categoryPieCtx2 = document.getElementById('categoryPieChart2').getContext('2d');
-                // new Chart(categoryPieCtx2, {
-                //     type: 'pie',
-                //     data: {
-                //         labels: {{ category_labels|tojson }},
-                //         datasets: [{
-                //             data: {{ category_data|tojson }},
-                //             backgroundColor: [
-                //                 'rgba(255, 99, 132, 0.6)',
-                //                 'rgba(54, 162, 235, 0.6)',
-                //                 'rgba(255, 206, 86, 0.6)',
-                //                 'rgba(75, 192, 192, 0.6)',
-                //                 'rgba(153, 102, 255, 0.6)',
-                //                 'rgba(255, 159, 64, 0.6)',
-                //                 'rgba(199, 199, 199, 0.6)',
-                //                 'rgba(83, 102, 255, 0.6)',
-                //                 'rgba(40, 159, 64, 0.6)',
-                //                 'rgba(210, 99, 132, 0.6)'
-                //             ],
-                //             borderWidth: 1
-                //         }]
-                //     },
-                //     options: {
-                //         responsive: true,
-                //         plugins: {
-                //             legend: {
-                //                 position: 'right',
-                //             }
-                //         }
-                //     }
-                // });
             
                 // Investment Line Chart
                 const investmentLineCtx = document.getElementById('investmentLineChart').getContext('2d');
@@ -441,7 +406,7 @@
                     data: {
                         labels: {{ monthly_labels|tojson }},
                         datasets: [{
-                            label: 'Total Investment Value',
+                            label: 'Valor Total dos Investimentos',
                             data: {{ monthly_investment_totals|tojson }},
                             backgroundColor: 'rgba(54, 162, 235, 0.2)',
                             borderColor: 'rgba(54, 162, 235, 1)',
@@ -467,14 +432,14 @@
                     data: {
                         labels: {{ monthly_labels|tojson }},
                         datasets: [{
-                            label: 'Gross Profit',
+                            label: 'Lucro Bruto',
                             data: {{ monthly_gross_profits|tojson }},
                             backgroundColor: 'rgba(255, 99, 132, 0.2)',
                             borderColor: 'rgba(255, 99, 132, 1)',
                             borderWidth: 2,
                             tension: 0.1
                         }, {
-                            label: 'Net Profit',
+                            label: 'Lucro Líquido',
                             data: {{ monthly_net_profits|tojson }},
                             backgroundColor: 'rgba(75, 192, 192, 0.2)',
                             borderColor: 'rgba(75, 192, 192, 1)',
@@ -494,6 +459,7 @@
             });
         </script>     
         <script>
+            // Accordion toggle function
             function toggleAccordion(id) {
                 const content = document.getElementById(id);
                 const header = content.previousElementSibling;
@@ -516,7 +482,7 @@
                     content.classList.remove('active');
                 });
             });
-            </script>
+        </script>
     </body>
-    </html>
-    
+</html>
+
