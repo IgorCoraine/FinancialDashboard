@@ -555,6 +555,460 @@ def charts():
         category_colors=category_colors
     )
 
+@app.route('/investments', methods=['GET', 'POST'])
+def investments():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    user_id = get_user_id(session['username'])
+    
+    # Get current date or selected date from query parameters
+    current_date = datetime.now()
+    selected_month = int(request.args.get('month', current_date.month))
+    selected_year = int(request.args.get('year', current_date.year))
+    
+    # Get month name and calendar months for dropdown
+    month_name = calendar.month_name[selected_month]
+    calendar_months = {i: calendar.month_name[i] for i in range(1, 13)}
+    
+    # Calculate date range for the selected month
+    month_start = f"{selected_year}-{selected_month:02d}-01"
+    if selected_month == 12:
+        next_month_year = selected_year + 1
+        next_month = 1
+    else:
+        next_month_year = selected_year
+        next_month = selected_month + 1
+    month_end = f"{next_month_year}-{next_month:02d}-01"
+    
+    conn = get_db_connection()
+    
+    # Get all investment categories
+    investment_categories = conn.execute('SELECT * FROM investment_categories').fetchall()
+    
+    # Handle form submission for adding a new investment
+    if request.method == 'POST':
+        action = request.form.get('action', 'add_investment')
+        
+        if action == 'add_investment':
+            name = request.form['name']
+            category_id = request.form['category_id']
+            maturity_date = request.form.get('maturity_date', '')
+            liquidity = request.form['liquidity']
+            institution = request.form['institution']
+            initial_amount = float(request.form['initial_amount'])
+            transaction_date = request.form['transaction_date']
+            
+            # Insert the investment
+            cursor = conn.execute(
+                '''INSERT INTO investments 
+                   (name, category_id, maturity_date, liquidity, institution) 
+                   VALUES (?, ?, ?, ?, ?)''',
+                (name, category_id, maturity_date, liquidity, institution)
+            )
+            investment_id = cursor.lastrowid
+            
+            # Insert the initial transaction
+            conn.execute(
+                '''INSERT INTO investment_transactions 
+                   (investment_id, amount, transaction_type, date) 
+                   VALUES (?, ?, ?, ?)''',
+                (investment_id, initial_amount, 'deposit', transaction_date)
+            )
+            conn.commit()
+            
+            flash('Investment added successfully', 'success')
+        
+        elif action == 'add_transaction':
+            investment_id = request.form['investment_id']
+            amount = float(request.form['amount'])
+            transaction_type = request.form['transaction_type']
+            transaction_date = request.form['transaction_date']
+            profit_amount = request.form.get('profit_amount', None)
+            
+            if profit_amount:
+                profit_amount = float(profit_amount)
+            
+            conn.execute(
+                '''INSERT INTO investment_transactions 
+                   (investment_id, amount, transaction_type, date, profit_amount) 
+                   VALUES (?, ?, ?, ?, ?)''',
+                (investment_id, amount, transaction_type, transaction_date, profit_amount)
+            )
+            conn.commit()
+            
+            flash('Transaction added successfully', 'success')
+        
+        elif action == 'add_category':
+            category_name = request.form['category_name']
+            
+            conn.execute(
+                'INSERT INTO investment_categories (name) VALUES (?)',
+                (category_name,)
+            )
+            conn.commit()
+            
+            flash('Investment category added successfully', 'success')
+        
+        return redirect(url_for('investments', month=selected_month, year=selected_year))
+    
+    # Get all investments with their current balance
+    investments_data = conn.execute(
+        '''SELECT i.id, i.name, i.category_id, i.maturity_date, i.liquidity, i.institution, 
+                  ic.name as category_name,
+                  (SELECT SUM(CASE WHEN transaction_type = 'deposit' THEN amount 
+                                   WHEN transaction_type = 'withdrawal' THEN -amount 
+                                   ELSE 0 END) 
+                   FROM investment_transactions 
+                   WHERE investment_id = i.id) as current_balance,
+                  (SELECT SUM(profit_amount) 
+                   FROM investment_transactions 
+                   WHERE investment_id = i.id AND profit_amount IS NOT NULL) as total_profit
+           FROM investments i
+           JOIN investment_categories ic ON i.category_id = ic.id
+           ORDER BY i.name'''
+    ).fetchall()
+    
+    # Calculate total investments and profits
+    total_invested = 0
+    total_profit = 0
+    total_current_value = 0
+    
+    for inv in investments_data:
+        if inv['current_balance']:
+            total_invested += inv['current_balance']
+        if inv['total_profit']:
+            total_profit += inv['total_profit']
+    
+    total_current_value = total_invested + total_profit
+    
+    # Calculate profit percentage
+    gross_profit_percentage = (total_profit / total_invested * 100) if total_invested > 0 else 0
+    
+    # Get monthly profit data for the last 12 months
+    monthly_labels = []
+    monthly_investment_totals = []
+    monthly_gross_profits = []
+    monthly_net_profits = []
+
+    # Começar do mês atual e voltar 11 meses
+    for i in range(12):
+        # Calcular o mês e ano corretos
+        # Para o mês atual, i = 0
+        # Para 11 meses atrás, i = 11
+        month = selected_month - i
+        year = selected_year
+        
+        # Ajustar o ano se o mês for negativo ou zero
+        while month <= 0:
+            month += 12
+            year -= 1
+        
+        # Format date strings for SQL queries
+        month_start = f"{year}-{month:02d}-01"
+        
+        # Calcular o próximo mês para o fim do período
+        next_month = month + 1
+        next_year = year
+        if next_month > 12:
+            next_month = 1
+            next_year += 1
+        
+        month_end = f"{next_year}-{next_month:02d}-01"
+        
+        # Get month name for labels
+        month_name = f"{calendar.month_name[month]} {year}"
+        monthly_labels.insert(0, month_name)
+        
+        # Get total investment value at the end of the month
+        month_total = conn.execute(
+            '''SELECT SUM(CASE WHEN transaction_type = 'deposit' THEN amount 
+                              WHEN transaction_type = 'withdrawal' THEN -amount 
+                              ELSE 0 END) as total
+               FROM investment_transactions 
+               WHERE date < ?''',
+            (month_end,)
+        ).fetchone()
+        
+        # Get profit for the month
+        month_profit = conn.execute(
+            '''SELECT SUM(profit_amount) as total
+               FROM investment_transactions 
+               WHERE date >= ? AND date < ? AND profit_amount IS NOT NULL''',
+            (month_start, month_end)
+        ).fetchone()
+        
+        monthly_investment_totals.insert(0, month_total['total'] if month_total['total'] else 0)
+        
+        profit_amount = month_profit['total'] if month_profit['total'] else 0
+        monthly_gross_profits.insert(0, profit_amount)
+        
+        # Assuming 15% tax on profits for net calculation
+        monthly_net_profits.insert(0, profit_amount * 0.85)
+    
+    # Get data for category pie chart
+    category_totals = {}
+    
+    for inv in investments_data:
+        category_name = inv['category_name']
+        if category_name not in category_totals:
+            category_totals[category_name] = 0
+        
+        if inv['current_balance']:
+            category_totals[category_name] += inv['current_balance']
+    
+    category_labels = list(category_totals.keys())
+    category_data = list(category_totals.values())
+    
+    # Get last month's profit percentage
+    last_month_start = month_start
+    last_month_end = month_end
+    
+    last_month_investment_value = conn.execute(
+        '''SELECT SUM(CASE WHEN transaction_type = 'deposit' THEN amount 
+                          WHEN transaction_type = 'withdrawal' THEN -amount 
+                          ELSE 0 END) as total
+           FROM investment_transactions 
+           WHERE date < ?''',
+        (last_month_start,)
+    ).fetchone()
+    
+    last_month_profit = conn.execute(
+        '''SELECT SUM(profit_amount) as total
+           FROM investment_transactions 
+           WHERE date >= ? AND date < ? AND profit_amount IS NOT NULL''',
+        (last_month_start, last_month_end)
+    ).fetchone()
+    
+    last_month_investment = last_month_investment_value['total'] if last_month_investment_value['total'] else 0
+    last_month_profit_amount = last_month_profit['total'] if last_month_profit['total'] else 0
+    
+    last_month_gross_profit_percentage = (last_month_profit_amount / last_month_investment * 100) if last_month_investment > 0 else 0
+    last_month_net_profit_percentage = last_month_gross_profit_percentage * 0.85  # Assuming 15% tax
+    
+    # Get transactions for each investment
+    investment_transactions = {}
+    
+    for inv in investments_data:
+        transactions = conn.execute(
+            '''SELECT * FROM investment_transactions 
+               WHERE investment_id = ? 
+               ORDER BY date DESC''',
+            (inv['id'],)
+        ).fetchall()
+        
+        investment_transactions[inv['id']] = transactions
+    
+    conn.close()
+    
+    return render_template(
+        'investments.html',
+        investment_categories=investment_categories,
+        investments=investments_data,
+        investment_transactions=investment_transactions,
+        total_invested=total_invested,
+        total_profit=total_profit,
+        total_current_value=total_current_value,
+        gross_profit_percentage=gross_profit_percentage,
+        net_profit_percentage=gross_profit_percentage * 0.85,  # Assuming 15% tax
+        last_month_gross_profit_percentage=last_month_gross_profit_percentage,
+        last_month_net_profit_percentage=last_month_net_profit_percentage,
+        month_name=month_name,
+        current_year=current_date.year,
+        selected_month=selected_month,
+        selected_year=selected_year,
+        calendar_months=calendar_months,
+        monthly_labels=monthly_labels,
+        monthly_investment_totals=monthly_investment_totals,
+        monthly_gross_profits=monthly_gross_profits,
+        monthly_net_profits=monthly_net_profits,
+        category_labels=category_labels,
+        category_data=category_data
+    )
+
+@app.route('/investments/delete/<int:id>', methods=['POST'])
+def delete_investment(id):
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    user_id = get_user_id(session['username'])
+    
+    conn = get_db_connection()
+    
+    # First delete all transactions for this investment
+    conn.execute('DELETE FROM investment_transactions WHERE investment_id = ?', (id,))
+    
+    # Then delete the investment
+    conn.execute('DELETE FROM investments WHERE id = ?', (id,))
+    
+    conn.commit()
+    conn.close()
+    
+    flash('Investment deleted successfully', 'success')
+    return redirect(url_for('investments'))
+
+@app.route('/investments/delete_transaction/<int:id>', methods=['POST'])
+def delete_investment_transaction(id):
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    user_id = get_user_id(session['username'])
+    
+    conn = get_db_connection()
+    conn.execute('DELETE FROM investment_transactions WHERE id = ?', (id,))
+    conn.commit()
+    conn.close()
+    
+    flash('Transaction deleted successfully', 'success')
+    return redirect(url_for('investments'))
+
+@app.route('/investment_categories', methods=['GET', 'POST'])
+def investment_categories():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    user_id = get_user_id(session['username'])
+    
+    if request.method == 'POST':
+        name = request.form['name']
+        
+        conn = get_db_connection()
+        conn.execute('INSERT INTO investment_categories (name) VALUES (?)', (name,))
+        conn.commit()
+        conn.close()
+        
+        flash('Investment category added successfully', 'success')
+        return redirect(url_for('investment_categories'))
+    
+    conn = get_db_connection()
+    categories = conn.execute('SELECT * FROM investment_categories').fetchall()
+    conn.close()
+    
+    return render_template('investment_categories.html', categories=categories)
+
+@app.route('/investment_categories/delete/<int:id>', methods=['POST'])
+def delete_investment_category(id):
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    user_id = get_user_id(session['username'])
+    
+    conn = get_db_connection()
+    
+    # Check if category is in use
+    investments = conn.execute('SELECT COUNT(*) as count FROM investments WHERE category_id = ?', (id,)).fetchone()
+    
+    if investments['count'] > 0:
+        flash('Cannot delete category that is in use', 'danger')
+    else:
+        conn.execute('DELETE FROM investment_categories WHERE id = ?', (id,))
+        conn.commit()
+        flash('Investment category deleted successfully', 'success')
+    
+    conn.close()
+    
+    return redirect(url_for('investment_categories'))
+
+@app.route('/goals', methods=['GET', 'POST'])
+def goals():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    user_id = get_user_id(session['username'])
+    
+    conn = get_db_connection()
+    
+    # Handle form submission for adding a new goal
+    if request.method == 'POST':
+        action = request.form.get('action', 'add_goal')
+        
+        if action == 'add_goal':
+            name = request.form['name']
+            target_amount = float(request.form['target_amount'])
+            current_amount = float(request.form.get('current_amount', 0))
+            
+            conn.execute(
+                'INSERT INTO goals (name, target_amount, current_amount) VALUES (?, ?, ?)',
+                (name, target_amount, current_amount)
+            )
+            conn.commit()
+            
+            flash('Goal added successfully', 'success')
+            return redirect(url_for('goals'))
+    
+    # Get all goals
+    goals = conn.execute('SELECT * FROM goals ORDER BY date_created DESC').fetchall()
+    
+    # Calculate progress percentage for each goal
+    goals_with_progress = []
+    for goal in goals:
+        progress = (goal['current_amount'] / goal['target_amount'] * 100) if goal['target_amount'] > 0 else 0
+        goals_with_progress.append({
+            'id': goal['id'],
+            'name': goal['name'],
+            'target_amount': goal['target_amount'],
+            'current_amount': goal['current_amount'],
+            'date_created': goal['date_created'],
+            'progress': progress,
+            'remaining': goal['target_amount'] - goal['current_amount']
+        })
+    
+    conn.close()
+    
+    return render_template('goals.html', goals=goals_with_progress)
+
+@app.route('/goals/update/<int:id>', methods=['POST'])
+def update_goal(id):
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    user_id = get_user_id(session['username'])
+    
+    name = request.form.get('name')
+    target_amount = request.form.get('target_amount')
+    current_amount = request.form.get('current_amount')
+    
+    update_fields = []
+    params = []
+    
+    if name:
+        update_fields.append('name = ?')
+        params.append(name)
+    
+    if target_amount:
+        update_fields.append('target_amount = ?')
+        params.append(float(target_amount))
+    
+    if current_amount:
+        update_fields.append('current_amount = ?')
+        params.append(float(current_amount))
+    
+    if update_fields:
+        conn = get_db_connection()
+        query = f"UPDATE goals SET {', '.join(update_fields)} WHERE id = ?"
+        params.append(id)
+        conn.execute(query, params)
+        conn.commit()
+        conn.close()
+        
+        flash('Goal updated successfully', 'success')
+    
+    return redirect(url_for('goals'))
+
+@app.route('/goals/delete/<int:id>', methods=['POST'])
+def delete_goal(id):
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    user_id = get_user_id(session['username'])
+    
+    conn = get_db_connection()
+    conn.execute('DELETE FROM goals WHERE id = ?', (id,))
+    conn.commit()
+    conn.close()
+    
+    flash('Goal deleted successfully', 'success')
+    return redirect(url_for('goals'))
 
 if __name__ == '__main__':
     app.run(debug=True)

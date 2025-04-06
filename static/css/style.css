@@ -209,3 +209,294 @@ tr:hover {
   width: 100%;
   margin-bottom: 2rem;
 }
+
+.card-body {
+  width: 50%;
+}
+
+.summary-cards{
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.accordion-button{
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  padding: 0.75rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-top: 1rem;
+}
+
+.income{
+  margin-top: 0.5rem;
+}
+
+/* Custom Accordion Styles */
+.custom-accordion {
+  width: 100%;
+  border: 1px solid #861A60;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.accordion-item {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.accordion-item:last-child {
+  border-bottom: none;
+}
+
+.accordion-header {
+  background-color: #861A60;
+  padding: 15px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.accordion-header:hover {
+  background-color: #D56199;
+}
+
+.investment-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.investment-name {
+  font-weight: bold;
+  flex: 2;
+}
+
+.investment-category, .investment-balance, .investment-institution {
+  flex: 1;
+  text-align: center;
+}
+
+.toggle-icon {
+  width: 20px;
+  text-align: center;
+  transition: transform 0.3s;
+}
+
+.accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+  background-color: var(--bg-medium);
+}
+
+.accordion-content.active {
+  max-height: 1000px; /* Adjust as needed */
+  transition: max-height 0.5s ease-in;
+}
+
+/* Investment Details */
+.investment-details {
+  padding: 15px;
+  background-color: var(--bg-dark);
+  border-bottom: 1px solid var(--bg-medium);
+}
+
+.details-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 -10px;
+}
+
+.detail-item {
+  flex: 1;
+  min-width: 200px;
+  padding: 0 10px;
+  margin-bottom: 10px;
+}
+
+/* Transaction Section */
+.transaction-section, .add-transaction-section {
+  padding: 15px;
+  border-bottom: 1px solid var(--bg-medium);
+}
+
+.transaction-section h3, .add-transaction-section h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+/* Transaction Table */
+.transaction-table-container {
+  overflow-x: auto;
+}
+
+.transaction-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.transaction-table th, .transaction-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--bg-medium);
+}
+
+.transaction-table th {
+  background-color: var(--bg-dark);
+  font-weight: bold;
+}
+
+.transaction-table tr:hover {
+  background-color: var(--bg-medium);
+}
+
+.transaction-type {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+
+.transaction-type.deposit {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.transaction-type.withdrawal {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.transaction-type.profit {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+/* Form Styles */
+.transaction-form {
+  width: 100%;
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 -10px;
+}
+
+.form-group {
+  flex: 1;
+  min-width: 200px;
+  padding: 0 10px;
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.form-group input, .form-group select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.input-with-prefix {
+  display: flex;
+  align-items: center;
+}
+
+.prefix {
+  padding: 8px 10px;
+  background-color: var(--bg-dark);
+  border: 1px solid #ccc;
+  border-right: none;
+  border-radius: 4px 0 0 4px;
+}
+
+.input-with-prefix input {
+  border-radius: 0 4px 4px 0;
+}
+
+.form-actions {
+  padding: 0 10px;
+}
+
+/* Button Styles */
+.submit-btn, .delete-btn {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s;
+}
+
+.submit-btn {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.submit-btn:hover {
+  background-color: var(--primary-dark);
+}
+
+.delete-btn {
+  background-color: #dc3545;
+  color: white;
+}
+
+.delete-btn:hover {
+  background-color: #c82333;
+}
+
+.delete-btn.small {
+  padding: 4px 8px;
+  font-size: 0.85rem;
+}
+
+/* Message Styles */
+.no-data-message {
+  padding: 15px;
+  background-color: #d1ecf1;
+  color: #0c5460;
+  border-radius: 4px;
+  margin-top: 10px;
+}
+
+ /* Custom progress bar styles */
+ .goal-progress-container {
+  width: 100%;
+  background-color: var(--bg-dark);
+  border-radius: 4px;
+  border-color: var(--bg-medium);
+  height: 20px;
+  overflow: hidden;
+  margin: 5px 0;
+  border: 0.1rem solid var(--bg-medium);
+}
+
+.goal-progress-bar {
+  height: 100%;
+  text-align: center;
+  line-height: 20px;
+  color: white;
+  font-size: 1rem;
+  transition: width 0.3s ease;
+}
+
+.progress-success { background-color: var(--primary-color);}
+.progress-info { background-color: var(--primary-color); }
+.progress-primary { background-color: var(--primary-color); }
+.progress-warning { background-color: var(--primary-color); }
+.progress-danger { background-color: var(--primary-color); }

@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Welcome to your Finance Dashboard, {{ username }}</h1>
+            <nav>
+                <a href="{{ url_for('dashboard') }}" class="menu-item">Dashboard</a>
+                <a href="{{ url_for('categories') }}" class="menu-item">Manage Categories</a>
+                <a href="{{ url_for('salary') }}" class="menu-item">Add Salary</a>
+                <a href="{{ url_for('expenses') }}" class="menu-item">Expenses</a>
+                <a href="{{ url_for('charts') }}" class="menu-item">Charts</a>
+                <a href="{{ url_for('investments') }}" class="active">Investments</a>
+                <a href="{{ url_for('goals') }}" class="menu-item">Goals</a>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Log out</a>
+            </nav>
+        </header>
+
+        <main>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <h1>Investments</h1>
+            
+            <!-- Month/Year Selector -->
+            <section class="month-selector">
+                <h2>{{ month_name }} {{ current_year }} Investments</h2>
+                <form method="GET" action="{{ url_for('investments') }}">
+                    <select name="month" onchange="this.form.submit()">
+                        {% for i in range(1, 13) %}
+                            <option value="{{ i }}" {% if i == selected_month %}selected{% endif %}>
+                                {{ calendar_months[i] }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <select name="year" onchange="this.form.submit()">
+                        {% for year in range(current_year-5, current_year+1) %}
+                            <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>
+                                {{ year }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </section>
+
+            <!-- Investment Summary -->
+            <section class="month-summary">
+                <div class="summary-boxes">
+                    <div class="summary-info">
+                        <div class="summary-box income">
+                            <h3>Total Invested</h3>
+                            <p>R$ {{ "%.2f"|format(total_invested) }}</p>
+                        </div>
+                        <div class="summary-box expenses">
+                            <h3>Total Profit</h3>
+                            <p>R$ {{ "%.2f"|format(total_profit) }}</p>
+                        </div>
+                        <div class="summary-box balance">
+                            <h3>Current Value</h3>
+                            <p>R$ {{ "%.2f"|format(total_current_value) }}</p>
+                        </div>
+                        <div class="summary-box">
+                            <h3>Profit Percentage</h3>
+                            <p>{{ "%.2f"|format(gross_profit_percentage) }}% ({{ "%.2f"|format(net_profit_percentage) }}% net)</p>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="categoryPieChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Last Month Performance -->
+            <section class="budget-table">
+                <h2>Last Month Performance</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Gross Profit</td>
+                            <td>{{ "%.2f"|format(last_month_gross_profit_percentage) }}%</td>
+                        </tr>
+                        <tr>
+                            <td>Net Profit</td>
+                            <td>{{ "%.2f"|format(last_month_net_profit_percentage) }}%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Charts -->
+            <div class="row mb-4">
+                <!-- <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Investment Distribution by Category</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="categoryPieChart2"></canvas>
+                        </div>
+                    </div>
+                </div> -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Total Investment Value (Last 12 Months)</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="investmentLineChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Monthly Profit (Last 12 Months)</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="profitLineChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add New Investment -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Add New Investment</h5>
+                </div>
+                <div class="form-group">
+                    <form method="post" class="row g-3">
+                        <input type="hidden" name="action" value="add_investment">
+                        <div class="col-md-4">
+                            <label for="name" class="form-label">Investment Name</label>
+                            <input type="text" id="name" name="name" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="category_id" class="form-label">Category</label>
+                            <select class="form-select" id="category_id" name="category_id" required>
+                                {% for category in investment_categories %}
+                                    <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="maturity_date" class="form-label">Maturity Date (if applicable)</label>
+                            <input type="date" id="maturity_date" name="maturity_date">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="liquidity" class="form-label">Liquidity</label>
+                            <select class="form-select" id="liquidity" name="liquidity" required>
+                                <option value="Immediate">Immediate</option>
+                                <option value="D+1">D+1</option>
+                                <option value="D+30">D+30</option>
+                                <option value="D+60">D+60</option>
+                                <option value="D+90">D+90</option>
+                                <option value="D+180">D+180</option>
+                                <option value="D+360">D+360</option>
+                                <option value="Maturity">At Maturity</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="institution" class="form-label">Institution</label>
+                            <input type="text" id="institution" name="institution" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="initial_amount" class="form-label">Initial Amount</label>
+                            <input type="number" step="0.01" id="initial_amount" name="initial_amount" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="transaction_date" class="form-label">Date</label>
+                            <input type="date" id="transaction_date" name="transaction_date" required>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">Add Investment</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Add New Category -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Add New Investment Category</h5>
+                </div>
+                <div class="form-group">
+                    <form method="post" class="row g-3">
+                        <input type="hidden" name="action" value="add_category">
+                        <div class="col-md-6">
+                            <label for="category_name" class="form-label">Category Name</label>
+                            <input type="text" class="form-control" id="category_name" name="category_name" required>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">Add Category</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Investment List -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Your Investments</h5>
+                </div>
+                <div class="card-body">
+                    <div class="custom-accordion" id="investmentsAccordion">
+                        {% for investment in investments %}
+                        <div class="accordion-item">
+                            <div class="accordion-header" onclick="toggleAccordion('collapse{{ investment.id }}')">
+                                <div class="investment-summary">
+                                    <div class="investment-name">{{ investment.name }}</div>
+                                    <div class="investment-category">{{ investment.category_name }}</div>
+                                    <div class="investment-balance">R$ {{ "%.2f"|format(investment.current_balance or 0) }}</div>
+                                    <div class="investment-institution">{{ investment.institution }}</div>
+                                    <div class="toggle-icon">▼</div>
+                                </div>
+                            </div>
+                            <div id="collapse{{ investment.id }}" class="accordion-content">
+                                <div class="investment-details">
+                                    <div class="details-row">
+                                        <div class="detail-item">
+                                            <strong>Maturity Date:</strong> {{ investment.maturity_date or 'N/A' }}
+                                        </div>
+                                        <div class="detail-item">
+                                            <strong>Liquidity:</strong> {{ investment.liquidity }}
+                                        </div>
+                                        <div class="detail-item">
+                                            <strong>Total Profit:</strong> R$ {{ "%.2f"|format(investment.total_profit or 0) }}
+                                        </div>
+                                        <div class="detail-item">
+                                            <form method="post" action="{{ url_for('delete_investment', id=investment.id) }}" onsubmit="return confirm('Are you sure you want to delete this investment?');">
+                                                <button type="submit" class="delete-btn">Delete Investment</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Transaction History -->
+                                <div class="transaction-section">
+                                    <h3>Transaction History</h3>
+                                    {% if investment_transactions[investment.id]|length > 0 %}
+                                    <div class="transaction-table-container">
+                                        <table class="transaction-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Type</th>
+                                                    <th>Amount</th>
+                                                    <th>Profit</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for transaction in investment_transactions[investment.id] %}
+                                                <tr>
+                                                    <td>{{ transaction.date }}</td>
+                                                    <td>
+                                                        <span class="transaction-type {{ transaction.transaction_type }}">
+                                                            {{ transaction.transaction_type|capitalize }}
+                                                        </span>
+                                                    </td>
+                                                    <td>R$ {{ "%.2f"|format(transaction.amount) }}</td>
+                                                    <td>{% if transaction.profit_amount %}R$ {{ "%.2f"|format(transaction.profit_amount) }}{% else %}—{% endif %}</td>
+                                                    <td>
+                                                        <form method="post" action="{{ url_for('delete_investment_transaction', id=transaction.id) }}" onsubmit="return confirm('Are you sure you want to delete this transaction?');">
+                                                            <button type="submit" class="delete-btn small">Delete</button>
+                                                        </form>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <div class="no-data-message">No transactions recorded for this investment yet.</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Add Transaction Form -->
+                                <div class="add-transaction-section">
+                                    <h3>Add Transaction</h3>
+                                    <form method="post" class="transaction-form">
+                                        <input type="hidden" name="action" value="add_transaction">
+                                        <input type="hidden" name="investment_id" value="{{ investment.id }}">
+                                        
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="transaction_type{{ investment.id }}">Type</label>
+                                                <select id="transaction_type{{ investment.id }}" name="transaction_type" required>
+                                                    <option value="deposit">Deposit</option>
+                                                    <option value="withdrawal">Withdrawal</option>
+                                                    <option value="profit">Profit</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label for="amount{{ investment.id }}">Amount</label>
+                                                <div class="input-with-prefix">
+                                                    <span class="prefix">R$</span>
+                                                    <input type="number" step="0.01" id="amount{{ investment.id }}" name="amount" required>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label for="profit_amount{{ investment.id }}">Profit Amount</label>
+                                                <div class="input-with-prefix">
+                                                    <span class="prefix">R$</span>
+                                                    <input type="number" step="0.01" id="profit_amount{{ investment.id }}" name="profit_amount">
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label for="transaction_date{{ investment.id }}">Date</label>
+                                                <input type="date" id="transaction_date{{ investment.id }}" name="transaction_date" required>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-actions">
+                                            <button type="submit" class="submit-btn">Add Transaction</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    {% if not investments %}
+                    <div class="no-data-message">
+                        You don't have any investments yet. Add your first investment using the form above.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </main>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Category Pie Chart in Summary
+                const categoryPieCtx = document.getElementById('categoryPieChart').getContext('2d');
+                new Chart(categoryPieCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: {{ category_labels|tojson }},
+                        datasets: [{
+                            data: {{ category_data|tojson }},
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.6)',
+                                'rgba(54, 162, 235, 0.6)',
+                                'rgba(255, 206, 86, 0.6)',
+                                'rgba(75, 192, 192, 0.6)',
+                                'rgba(153, 102, 255, 0.6)',
+                                'rgba(255, 159, 64, 0.6)',
+                                'rgba(199, 199, 199, 0.6)',
+                                'rgba(83, 102, 255, 0.6)',
+                                'rgba(40, 159, 64, 0.6)',
+                                'rgba(210, 99, 132, 0.6)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.raw || 0;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = ((value / total) * 100).toFixed(2);
+                                        return `${label}: R$ ${value.toFixed(2)} (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                // // Second Category Pie Chart
+                // const categoryPieCtx2 = document.getElementById('categoryPieChart2').getContext('2d');
+                // new Chart(categoryPieCtx2, {
+                //     type: 'pie',
+                //     data: {
+                //         labels: {{ category_labels|tojson }},
+                //         datasets: [{
+                //             data: {{ category_data|tojson }},
+                //             backgroundColor: [
+                //                 'rgba(255, 99, 132, 0.6)',
+                //                 'rgba(54, 162, 235, 0.6)',
+                //                 'rgba(255, 206, 86, 0.6)',
+                //                 'rgba(75, 192, 192, 0.6)',
+                //                 'rgba(153, 102, 255, 0.6)',
+                //                 'rgba(255, 159, 64, 0.6)',
+                //                 'rgba(199, 199, 199, 0.6)',
+                //                 'rgba(83, 102, 255, 0.6)',
+                //                 'rgba(40, 159, 64, 0.6)',
+                //                 'rgba(210, 99, 132, 0.6)'
+                //             ],
+                //             borderWidth: 1
+                //         }]
+                //     },
+                //     options: {
+                //         responsive: true,
+                //         plugins: {
+                //             legend: {
+                //                 position: 'right',
+                //             }
+                //         }
+                //     }
+                // });
+            
+                // Investment Line Chart
+                const investmentLineCtx = document.getElementById('investmentLineChart').getContext('2d');
+                new Chart(investmentLineCtx, {
+                    type: 'line',
+                    data: {
+                        labels: {{ monthly_labels|tojson }},
+                        datasets: [{
+                            label: 'Total Investment Value',
+                            data: {{ monthly_investment_totals|tojson }},
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 2,
+                            tension: 0.1,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: false
+                            }
+                        }
+                    }
+                });
+            
+                // Profit Line Chart
+                const profitLineCtx = document.getElementById('profitLineChart').getContext('2d');
+                new Chart(profitLineCtx, {
+                    type: 'line',
+                    data: {
+                        labels: {{ monthly_labels|tojson }},
+                        datasets: [{
+                            label: 'Gross Profit',
+                            data: {{ monthly_gross_profits|tojson }},
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 2,
+                            tension: 0.1
+                        }, {
+                            label: 'Net Profit',
+                            data: {{ monthly_net_profits|tojson }},
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 2,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            });
+        </script>     
+        <script>
+            function toggleAccordion(id) {
+                const content = document.getElementById(id);
+                const header = content.previousElementSibling;
+                const icon = header.querySelector('.toggle-icon');
+                
+                // Toggle active class
+                if (content.classList.contains('active')) {
+                    content.classList.remove('active');
+                    icon.style.transform = 'rotate(0deg)';
+                } else {
+                    content.classList.add('active');
+                    icon.style.transform = 'rotate(180deg)';
+                }
+            }
+            
+            // Initialize with all accordions closed
+            document.addEventListener('DOMContentLoaded', function() {
+                const accordionContents = document.querySelectorAll('.accordion-content');
+                accordionContents.forEach(content => {
+                    content.classList.remove('active');
+                });
+            });
+            </script>
+    </body>
+    </html>
+    
